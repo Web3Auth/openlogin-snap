@@ -1,14 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { Footer, Header, Home } from './components';
 import { MetaMaskProvider } from './hooks';
 
 import { light, dark, GlobalStyle } from './config/theme';
-import {
-  setLocalStorage,
-  getThemePreference,
-  MultiChainProvider,
-} from './utils';
+import { setLocalStorage, getThemePreference } from './utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -25,31 +21,6 @@ function App() {
     setLocalStorage('theme', darkTheme ? 'light' : 'dark');
     setDarkTheme(!darkTheme);
   };
-
-  useEffect(() => {
-    const provider = new MultiChainProvider();
-    (window as any).multichainProvider = provider;
-    provider
-      .connect({
-        requiredNamespaces: {
-          eip155: {
-            chains: ['eip155:5'],
-            methods: [
-              'eth_accounts',
-              'eth_sendTransaction',
-              'gnosis_watchSafe',
-              'gnosis_createSafe',
-            ],
-          },
-        },
-      })
-      .then(({ approval }) => {
-        return approval();
-      })
-      .then((session) => {
-        console.log('session', session);
-      });
-  });
 
   return (
     <ThemeProvider theme={darkTheme ? dark : light}>

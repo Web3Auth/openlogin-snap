@@ -1,4 +1,5 @@
 import { defaultSnapOrigin } from '../config';
+import { OpenLoginState } from '../config/snap';
 import { GetSnapsResponse, Snap } from '../types';
 
 /**
@@ -67,6 +68,23 @@ export const sendHello = async () => {
       defaultSnapOrigin,
       {
         method: 'hello',
+      },
+    ],
+  });
+};
+
+/**
+ * Store openlogin state
+ */
+
+export const storeOpenLoginStateIntoSnap = async (params: OpenLoginState) => {
+  await window.ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: [
+      defaultSnapOrigin,
+      {
+        method: 'save_openlogin_data',
+        params,
       },
     ],
   });

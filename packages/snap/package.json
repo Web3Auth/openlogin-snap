@@ -26,6 +26,11 @@
     "serve": "mm-snap serve",
     "start": "mm-snap watch"
   },
+  "dependencies": {
+    "@babel/runtime": "^7.19.0",
+    "@web3auth-mpc/ethereum-provider": "^2.1.22",
+    "async-mutex": "^0.4.0"
+  },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.0.3",
     "@metamask/auto-changelog": "^2.6.0",

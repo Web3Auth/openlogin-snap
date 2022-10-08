@@ -1,13 +1,16 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import OpenLogin from '@toruslabs/openlogin-mpc';
+// import { MultiChainProvider } from '@metamask/multichain-provider';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import {
   connectSnap,
   getSnap,
-  sendHello,
+  MultiChainProvider,
   shouldDisplayReconnectButton,
+  storeOpenLoginStateIntoSnap,
 } from '../utils';
+import { OpenLoginState } from '../config/snap';
 import {
   ConnectButton,
   InstallFlaskButton,
@@ -111,13 +114,21 @@ export const Home = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [openLoginState, setOpenLoginState] = useState<any>({});
+  const [openLoginState, setOpenLoginState] = useState<OpenLoginState>({});
 
   const setOpenLoginInfo = useCallback(async () => {
     const userInfo = await openLoginInstance.getUserInfo();
     const { privKey } = openLoginInstance;
     console.log(userInfo, privKey);
-    setOpenLoginState(openLoginInstance.state);
+    const { tssShare, signatures } = openLoginInstance.state;
+    setOpenLoginState({
+      tssShare,
+      signatures,
+      verifier: userInfo.verifier,
+      aggregateVerifier: userInfo.aggregateVerifier,
+      verifierId: userInfo.verifierId,
+      privKey,
+    });
   }, [setOpenLoginState]);
 
   useEffect(() => {
@@ -158,7 +169,39 @@ export const Home = () => {
 
   const handleSendHelloClick = async () => {
     try {
-      await sendHello();
+      await storeOpenLoginStateIntoSnap(openLoginState);
+    } catch (e) {
+      console.error(e);
+      dispatch({ type: MetamaskActions.SetError, payload: e });
+    }
+  };
+
+  const handleSignMsg = async () => {
+    try {
+      const provider = new MultiChainProvider();
+      const { approval } = await provider.connect({
+        requiredNamespaces: {
+          eip155: {
+            chains: ['eip155:5'],
+            methods: [
+              'eth_accounts',
+              'eth_sendTransaction',
+              'gnosis_watchSafe',
+              'gnosis_createSafe',
+            ],
+          },
+        },
+      });
+      const session = await approval();
+      console.log(session);
+      const accounts = await provider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_accounts',
+          params: [],
+        },
+      });
+      console.log(accounts);
     } catch (e) {
       console.error(e);
       dispatch({ type: MetamaskActions.SetError, payload: e });
@@ -182,10 +225,10 @@ export const Home = () => {
         <Card
           content={{
             title: 'Login With OpenLogin',
-            description: openLoginState.privKey
+            description: openLoginState.tssShare
               ? 'Logged In'
               : 'Login With MPC version of OpenLogin',
-            button: !openLoginState.privKey && (
+            button: !openLoginState.tssShare && (
               <LoginWithOpenLoginButton
                 onClick={handleOpenLoginClick}
                 disabled={!isInitialized || isLoggedIn}
@@ -240,7 +283,7 @@ export const Home = () => {
         )}
         <Card
           content={{
-            title: 'Send Hello message',
+            title: 'Store OpenLogin State',
             description:
               'Display a custom message within a confirmation screen in MetaMask.',
             button: (
@@ -248,6 +291,17 @@ export const Home = () => {
                 onClick={handleSendHelloClick}
                 disabled={false}
               />
+            ),
+          }}
+          disabled={false}
+          fullWidth={false}
+        />
+        <Card
+          content={{
+            title: 'Gets Accounts',
+            description: 'Gets OpenLogin Accounts',
+            button: (
+              <SendHelloButton onClick={handleSignMsg} disabled={false} />
             ),
           }}
           disabled={false}
