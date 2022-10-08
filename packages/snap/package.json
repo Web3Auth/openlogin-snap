@@ -15,7 +15,7 @@
     "snap.manifest.json"
   ],
   "scripts": {
-    "build": "mm-snap build",
+    "build": "torus-scripts build --name=bundle.js",
     "build:clean": "yarn clean && yarn build",
     "build:website": "node ./scripts/build-website.js",
     "clean": "rimraf dist",
@@ -24,7 +24,7 @@
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
     "serve": "mm-snap serve",
-    "start": "mm-snap watch"
+    "start": "python3 -m http.server 8080 --directory ."
   },
   "dependencies": {
     "@babel/runtime": "^7.19.0",
@@ -40,6 +40,8 @@
     "@metamask/eslint-config-typescript": "^10.0.0",
     "@metamask/snap-types": "^0.22.0",
     "@metamask/snaps-cli": "^0.22.0",
+    "@metamask/snaps-webpack-plugin": "^0.22.1",
+    "@toruslabs/torus-scripts": "^1.2.2",
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
     "eslint": "^8.21.0",

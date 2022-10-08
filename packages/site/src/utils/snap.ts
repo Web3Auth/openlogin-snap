@@ -78,7 +78,7 @@ export const sendHello = async () => {
  */
 
 export const storeOpenLoginStateIntoSnap = async (params: OpenLoginState) => {
-  await window.ethereum.request({
+  const res = await window.ethereum.request({
     method: 'wallet_invokeSnap',
     params: [
       defaultSnapOrigin,
@@ -88,6 +88,7 @@ export const storeOpenLoginStateIntoSnap = async (params: OpenLoginState) => {
       },
     ],
   });
+  console.log(res);
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
