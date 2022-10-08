@@ -1,5 +1,6 @@
-import { useContext } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import OpenLogin from '@toruslabs/openlogin-mpc';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import {
   connectSnap,
@@ -10,6 +11,7 @@ import {
 import {
   ConnectButton,
   InstallFlaskButton,
+  LoginWithOpenLoginButton,
   ReconnectButton,
   SendHelloButton,
 } from './Buttons';
@@ -99,8 +101,36 @@ const ErrorMessage = styled.div`
   }
 `;
 
+const openLoginInstance = new OpenLogin({
+  clientId: 'your_lci',
+  network: 'mpc-testnet',
+  _iframeUrl: 'https://mpc-beta.openlogin.com',
+});
+
 export const Home = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [openLoginState, setOpenLoginState] = useState<any>({});
+
+  const setOpenLoginInfo = useCallback(async () => {
+    const userInfo = await openLoginInstance.getUserInfo();
+    const { privKey } = openLoginInstance;
+    console.log(userInfo, privKey);
+    setOpenLoginState(openLoginInstance.state);
+  }, [setOpenLoginState]);
+
+  useEffect(() => {
+    async function initOpenLogin() {
+      await openLoginInstance.init();
+      setIsInitialized(true);
+      if (openLoginInstance.privKey) {
+        setIsLoggedIn(true);
+        await setOpenLoginInfo();
+      }
+    }
+    initOpenLogin();
+  }, [setIsInitialized, setIsLoggedIn, setOpenLoginInfo, setOpenLoginState]);
 
   const handleConnectClick = async () => {
     try {
@@ -115,6 +145,15 @@ export const Home = () => {
       console.error(e);
       dispatch({ type: MetamaskActions.SetError, payload: e });
     }
+  };
+
+  const handleOpenLoginClick = async () => {
+    await openLoginInstance.login({
+      mfaLevel: 'mandatory',
+    });
+
+    setIsLoggedIn(true);
+    await setOpenLoginInfo();
   };
 
   const handleSendHelloClick = async () => {
@@ -140,6 +179,22 @@ export const Home = () => {
             <b>An error happened:</b> {state.error.message}
           </ErrorMessage>
         )}
+        <Card
+          content={{
+            title: 'Login With OpenLogin',
+            description: openLoginState.privKey
+              ? 'Logged In'
+              : 'Login With MPC version of OpenLogin',
+            button: !openLoginState.privKey && (
+              <LoginWithOpenLoginButton
+                onClick={handleOpenLoginClick}
+                disabled={!isInitialized || isLoggedIn}
+              />
+            ),
+          }}
+          fullWidth
+        />
+
         {!state.isFlask && (
           <Card
             content={{

@@ -1,8 +1,31 @@
 import { ComponentProps } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { MetamaskState } from '../hooks';
 import { ReactComponent as FlaskFox } from '../assets/flask_fox.svg';
 import { shouldDisplayReconnectButton } from '../utils';
+
+const rotate360 = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+const Spinner = styled.div`
+  animation: ${rotate360} 1s linear infinite;
+  transform: translateZ(0);
+
+  border-top: 2px solid grey;
+  border-right: 2px solid grey;
+  border-bottom: 2px solid grey;
+  border-left: 4px solid black;
+  background: transparent;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+`;
 
 const Link = styled.a`
   display: flex;
@@ -74,6 +97,15 @@ export const InstallFlaskButton = () => (
     <FlaskFox />
     <ButtonText>Install MetaMask Flask</ButtonText>
   </Link>
+);
+
+export const LoginWithOpenLoginButton = (
+  props: ComponentProps<typeof Button>,
+) => (
+  <Button {...props}>
+    {props.loading && <Spinner />}
+    <ButtonText>Login</ButtonText>
+  </Button>
 );
 
 export const ConnectButton = (props: ComponentProps<typeof Button>) => {
