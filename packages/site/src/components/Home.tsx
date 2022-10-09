@@ -180,6 +180,7 @@ export const Home = () => {
   const handleSignMsg = async () => {
     try {
       const provider = new MultiChainProvider();
+      console.log('HERE NOW');
       const { approval } = await provider.connect({
         requiredNamespaces: {
           eip155: {
@@ -188,6 +189,7 @@ export const Home = () => {
           },
         },
       });
+      console.log('HERE NOW 2');
       const session = await approval();
       console.log(session, 'got session');
       const accounts = await provider.request({

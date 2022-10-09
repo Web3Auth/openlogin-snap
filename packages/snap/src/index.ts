@@ -70,8 +70,7 @@ export const keyring = {
       { method: 'eth_accounts', params: [] },
       'http://localhost:3000',
     );
-    debugger;
-    return res[0];
+    return res.result.map((addr: string) => `eip155:5:${addr}`);
   },
   handleRequest: async ({ request }: { request: any }) => {
     switch (request.method) {
@@ -97,9 +96,12 @@ export const keyring = {
  */
 async function handleProviderRequest(request: any, origin: string) {
   const provider = await initializeProvider(origin);
-  debugger;
+  console.log("calling handle", request, origin);
   const result = await provider.request(request);
-  return result;
+  console.log("what is the result", result);
+  return {
+    result,
+  };
 }
 
 /**
