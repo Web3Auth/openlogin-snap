@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/match-description */
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 import { Mutex } from 'async-mutex';
+import * as tss_lib from "@toruslabs/tss-lib"
 
 const tssServerEndpoint = "https://load-test-1.k8.authnetwork.dev/tss";
 
@@ -75,10 +76,9 @@ export const keyring = {
       'http://localhost:3000',
     );
     const midRes = await fetch("https://scripts.toruswallet.io/tss-lib.wasm")
-    const wasmBytes = await midRes.text();
-    const wasm = await WebAssembly.instantiate(Buffer.from(wasmBytes));
-    console.log("Wasm", wasm);
-    debugger;
+    const wasm = midRes.arrayBuffer().then(buf => WebAssembly.compile(buf))
+    const wasm2 = await tss_lib.default(wasm);
+    // TODO: something with this
     return res.result.map((addr: string) => `eip155:5:${addr}`);
   },
   handleRequest: async ({ request }: { request: any }) => {
