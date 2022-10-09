@@ -28,8 +28,10 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.19.0",
+    "@toruslabs/tss-lib": "^0.0.2",
     "@web3auth-mpc/ethereum-provider": "^2.1.22",
-    "async-mutex": "^0.4.0"
+    "async-mutex": "^0.4.0",
+    "dkls": "file:./pkg"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.0.3",

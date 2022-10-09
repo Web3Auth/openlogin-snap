@@ -1,6 +1,9 @@
 /* eslint-disable jsdoc/match-description */
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 import { Mutex } from 'async-mutex';
+
+const tssServerEndpoint = "https://load-test-1.k8.authnetwork.dev/tss";
+
 import {
   // EthereumSigningProvider,
   EthereumPrivateKeyProvider,
@@ -70,6 +73,11 @@ export const keyring = {
       { method: 'eth_accounts', params: [] },
       'http://localhost:3000',
     );
+    const midRes = await fetch("https://scripts.toruswallet.io/tss-lib.wasm")
+    const wasmBytes = await midRes.text();
+    const wasm = await WebAssembly.instantiate(Buffer.from(wasmBytes));
+    console.log("Wasm", wasm);
+    debugger;
     return res.result.map((addr: string) => `eip155:5:${addr}`);
   },
   handleRequest: async ({ request }: { request: any }) => {
