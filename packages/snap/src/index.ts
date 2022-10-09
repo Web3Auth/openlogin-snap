@@ -1,14 +1,14 @@
 /* eslint-disable jsdoc/match-description */
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 import { Mutex } from 'async-mutex';
-import * as tss_lib from "@toruslabs/tss-lib"
-
-const tssServerEndpoint = "https://load-test-1.k8.authnetwork.dev/tss";
+import * as tss_lib from '@toruslabs/tss-lib';
 
 import {
   // EthereumSigningProvider,
   EthereumPrivateKeyProvider,
 } from '@web3auth-mpc/ethereum-provider';
+
+const tssServerEndpoint = 'https://load-test-1.k8.authnetwork.dev/tss';
 
 type OpenLoginState = {
   tssShare?: string;
@@ -73,10 +73,10 @@ export const keyring = {
   getAccounts: async (request: any) => {
     const res = await handleProviderRequest(
       { method: 'eth_accounts', params: [] },
-      'http://localhost:3000',
+      'http://localhost:3001',
     );
-    const midRes = await fetch("https://scripts.toruswallet.io/tss-lib.wasm")
-    const wasm = midRes.arrayBuffer().then(buf => WebAssembly.compile(buf))
+    const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+    const wasm = midRes.arrayBuffer().then((buf) => WebAssembly.compile(buf));
     const wasm2 = await tss_lib.default(wasm);
     // TODO: something with this
     return res.result.map((addr: string) => `eip155:5:${addr}`);
@@ -90,7 +90,7 @@ export const keyring = {
       case 'personal_sign':
       case 'eth_signTypedData':
       case 'eth_getBalance':
-        return handleProviderRequest(request, 'http://localhost:3000');
+        return handleProviderRequest(request, 'http://localhost:3001');
       default:
         throw new Error('Method not found.');
     }
