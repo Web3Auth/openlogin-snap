@@ -52,25 +52,52 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         await saveCurrentState(newState);
       });
       return 'OK';
+    case 'getAccounts':
     case 'eth_accounts':
     case 'eth_sendTransaction':
     case 'eth_sign':
     case 'personal_sign':
     case 'eth_signTypedData':
-      return handleProviderRequest(request);
+      return handleProviderRequest(request, origin);
     default:
       throw new Error('Method not found.');
   }
+};
+
+export const keyring = {
+  getAccounts: async (request: any) => {
+    const res = await handleProviderRequest(
+      { method: 'eth_accounts', params: [] },
+      'http://localhost:3000',
+    );
+    debugger;
+    return res[0];
+  },
+  handleRequest: async ({ request }: { request: any }) => {
+    switch (request.method) {
+      case 'getAccounts':
+      case 'eth_accounts':
+      case 'eth_sendTransaction':
+      case 'eth_sign':
+      case 'personal_sign':
+      case 'eth_signTypedData':
+        return handleProviderRequest(request, 'http://localhost:3000');
+      default:
+        throw new Error('Method not found.');
+    }
+  },
 };
 
 /**
  * handle provider jrpc request
  *
  * @param request - jrpc request
+ * @param origin - origin
  * @returns provider jrpc response
  */
-async function handleProviderRequest(request: any) {
+async function handleProviderRequest(request: any, origin: string) {
   const provider = await initializeProvider(origin);
+  debugger;
   const result = await provider.request(request);
   return result;
 }
@@ -152,5 +179,5 @@ async function initializeProvider(origin: string): Promise<any> {
   }
 
   await privateKeyOrSigningProvider.setupProvider(state.privKey);
-  return privateKeyOrSigningProvider;
+  return privateKeyOrSigningProvider._providerEngineProxy;
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useCallback, useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import OpenLogin from '@toruslabs/openlogin-mpc';
@@ -183,17 +184,12 @@ export const Home = () => {
         requiredNamespaces: {
           eip155: {
             chains: ['eip155:5'],
-            methods: [
-              'eth_accounts',
-              'eth_sendTransaction',
-              'gnosis_watchSafe',
-              'gnosis_createSafe',
-            ],
+            methods: ['eth_accounts', 'eth_sendTransaction'],
           },
         },
       });
       const session = await approval();
-      console.log(session);
+      console.log(session, 'got session');
       const accounts = await provider.request({
         chainId: 'eip155:5',
         request: {
@@ -201,7 +197,7 @@ export const Home = () => {
           params: [],
         },
       });
-      console.log(accounts);
+      console.log(accounts, 'found accounts');
     } catch (e) {
       console.error(e);
       dispatch({ type: MetamaskActions.SetError, payload: e });
