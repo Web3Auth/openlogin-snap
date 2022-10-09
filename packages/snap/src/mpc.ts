@@ -1,11 +1,13 @@
+/* eslint-disable jsdoc/require-description */
+/* eslint-disable jsdoc/require-param-description */
+/* eslint-disable jsdoc/match-description */
 // import { ecrecover, pubToAddress } from "@ethereumjs/util";
 import { post } from '@toruslabs/http-helpers';
 import { safeatob } from '@toruslabs/openlogin-utils';
-import { Client } from '@toruslabs/tss-client';
 import * as tss from '@toruslabs/tss-lib';
 import BN from 'bn.js';
 import { ec as EC } from 'elliptic';
-import { io, Socket } from 'socket.io-client';
+import { Client } from './client';
 
 const ec = new EC('secp256k1');
 
@@ -16,13 +18,9 @@ const tssImportURL = 'https://scripts.toruswallet.io/tss-lib.wasm';
 
 const clients: { client: any; allocated: boolean }[] = [];
 
-export const wasmObj = {
-  wasm: null as any,
-};
-
 const createSockets = async (
   wsEndpoints: (string | null | undefined)[],
-): Promise<(Socket | null)[]> => {
+): Promise<(WebSocket | null)[]> => {
   console.log('socket 1', wsEndpoints);
 
   const sockets = wsEndpoints.map((wsEndpoint) => {
@@ -32,7 +30,7 @@ const createSockets = async (
     // const { origin } = new URL(wsEndpoint);
     // const path = `${new URL(wsEndpoint).pathname}/socket.io/`;
     // return io(origin, { transports: ['websocket'] });
-    return io(wsEndpoint);
+    return new WebSocket(wsEndpoint);
   });
 
   console.log('socket 2');
@@ -40,13 +38,14 @@ const createSockets = async (
   await new Promise((resolve) => {
     const timer = setInterval(() => {
       console.log('what are the sockets', sockets);
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let i = 0; i < sockets.length; i++) {
         const socket = sockets[i];
         if (socket === null) {
           continue;
         }
 
-        if (!socket.id) {
+        if (!socket.OPEN) {
           return;
         }
       }
@@ -187,6 +186,7 @@ export async function getPublicKeyFromTSSShare(
   const getLagrangeCoeff = (partyIndexes: BN[], partyIndex: BN): BN => {
     let upper = new BN(1);
     let lower = new BN(1);
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < partyIndexes.length; i += 1) {
       const otherPartyIndex = partyIndexes[i];
       if (!partyIndex.eq(otherPartyIndex)) {
@@ -264,14 +264,13 @@ export async function generatePrecompute() {
   console.log('there 2');
 
   const client = await setupTSS(tssShare, pubKey, verifierName, verifierId);
-  const tssInstance = wasmObj.wasm;
-  if (!tssInstance) {
-    await tss.default(tssImportURL);
-    wasmObj.wasm = tss;
-  }
   console.log('there 3');
-
-  client.precompute(wasmObj.wasm as any);
+  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+  const wasmModule = midRes
+    .arrayBuffer()
+    .then((buf) => WebAssembly.compile(buf));
+  const wasm = await tss.default(wasmModule);
+  client.precompute(wasm);
   console.log('there 4');
 
   await client.ready();
@@ -292,6 +291,7 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
   let foundClient = null as any;
 
   while (!foundClient) {
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < clients.length; i++) {
       const client = clients[i];
       if (!client.allocated) {
@@ -305,16 +305,18 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
   console.log('here now 1');
   await foundClient.client.ready();
   console.log('here now 2');
-  const tssInstance = wasmObj.wasm;
-  if (!tssInstance) {
-    await tss.default(tssImportURL);
-    wasmObj.wasm = tss;
-  }
   const { signatures } = await getTSSData();
   console.log('here now 3');
 
+  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+  const wasmModule = midRes
+    .arrayBuffer()
+    .then((buf) => WebAssembly.compile(buf));
+  const wasm = await tss.default(wasmModule);
+
+  // eslint-disable-next-line prefer-const
   let { r, s, recoveryParam } = await foundClient.client.sign(
-    wasmObj.wasm as any,
+    wasm,
     Buffer.from(msgHash).toString('base64'),
     true,
     '',
@@ -331,6 +333,7 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
     )
   ) {
     s = s.neg().umod(ec.curve.n);
+    // eslint-disable-next-line no-bitwise
     recoveryParam ^= 1;
   }
   // const recoveredPub = ecrecover(msgHash, recoveryParam + 27, Buffer.from(r.toString("hex"), "hex"), Buffer.from(s.toString("hex"), "hex"));

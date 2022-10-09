@@ -1,13 +1,13 @@
 /* eslint-disable jsdoc/match-description */
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 import { Mutex } from 'async-mutex';
-import * as tssLib from '@toruslabs/tss-lib';
+// import * as tssLib from '@toruslabs/tss-lib';
 
 import {
   EthereumSigningProvider,
   // EthereumPrivateKeyProvider,
 } from '@web3auth-mpc/ethereum-provider';
-import { tssSign, tssGetPublic, tssDataCallback, wasmObj } from './mpc';
+import { tssSign, tssGetPublic, tssDataCallback } from './mpc';
 
 type OpenLoginState = {
   tssShare?: string;
@@ -182,14 +182,6 @@ async function initializeProvider(origin: string): Promise<any> {
   // };
 
   // await this.tssSettings.tssDataCallback();
-
-  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
-  const wasmModule = midRes
-    .arrayBuffer()
-    .then((buf) => WebAssembly.compile(buf));
-  const wasm = await tssLib.default(wasmModule);
-
-  wasmObj.wasm = wasm;
 
   tssDataCallback(async () => {
     if (!state) {
