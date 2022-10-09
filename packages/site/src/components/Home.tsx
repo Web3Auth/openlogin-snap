@@ -20,6 +20,7 @@ import {
   SendHelloButton,
 } from './Buttons';
 import { Card } from './Card';
+import { Web3Operations } from './Web3Operations';
 
 const Container = styled.div`
   display: flex;
@@ -116,6 +117,9 @@ export const Home = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [openLoginState, setOpenLoginState] = useState<OpenLoginState>({});
+  const [multiChainProvider, setMultiChainProvider] =
+    useState<MultiChainProvider | null>(null);
+  const [consoleInfo, setConsoleInfo] = useState('');
 
   const setOpenLoginInfo = useCallback(async () => {
     const userInfo = await openLoginInstance.getUserInfo();
@@ -168,9 +172,74 @@ export const Home = () => {
     await setOpenLoginInfo();
   };
 
-  const handleSendHelloClick = async () => {
+  const handleSync = async () => {
     try {
       await storeOpenLoginStateIntoSnap(openLoginState);
+      const provider = new MultiChainProvider();
+      const { approval } = await provider.connect({
+        requiredNamespaces: {
+          eip155: {
+            chains: ['eip155:5'],
+            methods: [
+              'eth_accounts',
+              'eth_sendTransaction',
+              'eth_getBalance',
+              'eth_sign',
+            ],
+          },
+        },
+      });
+      const session = await approval();
+      console.log(session, 'got session');
+      setMultiChainProvider(provider);
+      setConsoleInfo(`Accounts synced`);
+    } catch (e) {
+      console.error(e);
+      dispatch({ type: MetamaskActions.SetError, payload: e });
+    }
+  };
+
+  const handleGetAccounts = async () => {
+    try {
+      if (!multiChainProvider) {
+        return;
+      }
+      const accounts = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_accounts',
+          params: [],
+        },
+      })) as string[];
+      console.log(accounts, 'found accounts');
+      setConsoleInfo(`Accounts: ${accounts}`);
+    } catch (e) {
+      console.error(e);
+      dispatch({ type: MetamaskActions.SetError, payload: e });
+    }
+  };
+
+  const handleGetBalance = async () => {
+    try {
+      if (!multiChainProvider) {
+        return;
+      }
+      const accounts = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_accounts',
+          params: [],
+        },
+      })) as string[];
+      const balance = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_getBalance',
+          params: [accounts[0], 'latest'],
+        },
+      })) as string[];
+      console.log(balance, 'found balance');
+      setConsoleInfo(`Balance: ${balance}`);
     } catch (e) {
       console.error(e);
       dispatch({ type: MetamaskActions.SetError, payload: e });
@@ -179,27 +248,59 @@ export const Home = () => {
 
   const handleSignMsg = async () => {
     try {
-      const provider = new MultiChainProvider();
-      console.log('HERE NOW');
-      const { approval } = await provider.connect({
-        requiredNamespaces: {
-          eip155: {
-            chains: ['eip155:5'],
-            methods: ['eth_accounts', 'eth_sendTransaction'],
-          },
-        },
-      });
-      console.log('HERE NOW 2');
-      const session = await approval();
-      console.log(session, 'got session');
-      const accounts = await provider.request({
+      if (!multiChainProvider) {
+        return;
+      }
+      const accounts = (await multiChainProvider.request({
         chainId: 'eip155:5',
         request: {
           method: 'eth_accounts',
           params: [],
         },
-      });
-      console.log(accounts, 'found accounts');
+      })) as string[];
+      const msgHash =
+        '0x1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8'; // hello
+      const signature = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_sign',
+          params: [accounts[0], msgHash],
+        },
+      })) as string[];
+      console.log(signature, 'found signature');
+      setConsoleInfo(`Signature: ${signature}`);
+    } catch (e) {
+      console.error(e);
+      dispatch({ type: MetamaskActions.SetError, payload: e });
+    }
+  };
+
+  const handleSendEth = async () => {
+    try {
+      if (!multiChainProvider) {
+        return;
+      }
+      const accounts = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_accounts',
+          params: [],
+        },
+      })) as string[];
+      const params = {
+        from: accounts[0],
+        to: accounts[0],
+        value: '0x9184e72a', // 2441406250
+      };
+      const hash = (await multiChainProvider.request({
+        chainId: 'eip155:5',
+        request: {
+          method: 'eth_sendTransaction',
+          params: [params],
+        },
+      })) as string[];
+      console.log(hash, 'found receipt');
+      setConsoleInfo(`Tx Hash: ${hash}`);
     } catch (e) {
       console.error(e);
       dispatch({ type: MetamaskActions.SetError, payload: e });
@@ -282,36 +383,31 @@ export const Home = () => {
         <Card
           content={{
             title: 'Store OpenLogin State',
-            description:
-              'Display a custom message within a confirmation screen in MetaMask.',
-            button: (
+            description: 'Syncs OpenLogin State into Snap',
+            button: <SendHelloButton onClick={handleSync} disabled={false} />,
+          }}
+          disabled={false}
+          fullWidth={false}
+        />
+        {multiChainProvider && (
+          <Web3Operations
+            content={{
+              title: 'Web3 Operations',
+            }}
+            fullWidth={true}
+            actionButtons={[
               <SendHelloButton
-                onClick={handleSendHelloClick}
-                disabled={false}
-              />
-            ),
-          }}
-          disabled={false}
-          fullWidth={false}
-        />
-        <Card
-          content={{
-            title: 'Gets Accounts',
-            description: 'Gets OpenLogin Accounts',
-            button: (
-              <SendHelloButton onClick={handleSignMsg} disabled={false} />
-            ),
-          }}
-          disabled={false}
-          fullWidth={false}
-        />
+                onClick={handleGetAccounts}
+                body="Get Accounts"
+              />,
+              <SendHelloButton onClick={handleGetBalance} body="Get Balance" />,
+              <SendHelloButton onClick={handleSignMsg} body="Sign Msg" />,
+              <SendHelloButton onClick={handleSendEth} body="Send Eth" />,
+            ]}
+          />
+        )}
         <Notice>
-          <p>
-            Please note that the <b>snap.manifest.json</b> and{' '}
-            <b>package.json</b> must be located in the server root directory and
-            the bundle must be hosted at the location specified by the location
-            field.
-          </p>
+          <p style={{ wordWrap: 'break-word' }}>{consoleInfo}</p>
         </Notice>
       </CardContainer>
     </Container>
