@@ -1,14 +1,13 @@
 /* eslint-disable jsdoc/match-description */
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 import { Mutex } from 'async-mutex';
-import * as tss_lib from "@toruslabs/tss-lib"
-
-const tssServerEndpoint = "https://load-test-1.k8.authnetwork.dev/tss";
+import * as tssLib from '@toruslabs/tss-lib';
 
 import {
-  // EthereumSigningProvider,
-  EthereumPrivateKeyProvider,
+  EthereumSigningProvider,
+  // EthereumPrivateKeyProvider,
 } from '@web3auth-mpc/ethereum-provider';
+import { tssSign, tssGetPublic, tssDataCallback, wasmObj } from './mpc';
 
 type OpenLoginState = {
   tssShare?: string;
@@ -70,15 +69,11 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 };
 
 export const keyring = {
-  getAccounts: async (request: any) => {
+  getAccounts: async () => {
     const res = await handleProviderRequest(
       { method: 'eth_accounts', params: [] },
       'http://localhost:3000',
     );
-    const midRes = await fetch("https://scripts.toruswallet.io/tss-lib.wasm")
-    const wasm = midRes.arrayBuffer().then(buf => WebAssembly.compile(buf))
-    const wasm2 = await tss_lib.default(wasm);
-    // TODO: something with this
     return res.result.map((addr: string) => `eip155:5:${addr}`);
   },
   handleRequest: async ({ request }: { request: any }) => {
@@ -105,7 +100,9 @@ export const keyring = {
  * @returns provider jrpc response
  */
 async function handleProviderRequest(request: any, origin: string) {
+  console.log('handle provider request', request);
   const provider = await initializeProvider(origin);
+  console.log('5');
   const result = await provider.request(request);
   return {
     result,
@@ -160,7 +157,8 @@ async function initializeProvider(origin: string): Promise<any> {
   if (!state) {
     throw new Error('No state for this');
   }
-  const privateKeyOrSigningProvider = new EthereumPrivateKeyProvider({
+  console.log('here 1');
+  const privateKeyOrSigningProvider = new EthereumSigningProvider({
     config: {
       chainConfig: {
         displayName: 'Ethereum Goerli',
@@ -172,6 +170,7 @@ async function initializeProvider(origin: string): Promise<any> {
       },
     },
   });
+  console.log('here 2');
 
   // const tssDataReader = async () => {
   //   return {
@@ -184,10 +183,41 @@ async function initializeProvider(origin: string): Promise<any> {
 
   // await this.tssSettings.tssDataCallback();
 
-  if (!state.privKey) {
-    throw new Error('Invalid priv key');
-  }
+  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+  const wasmModule = midRes
+    .arrayBuffer()
+    .then((buf) => WebAssembly.compile(buf));
+  const wasm = await tssLib.default(wasmModule);
 
-  await privateKeyOrSigningProvider.setupProvider(state.privKey);
+  wasmObj.wasm = wasm;
+
+  tssDataCallback(async () => {
+    if (!state) {
+      throw new Error('No state for this');
+    }
+
+    if (
+      !state.tssShare ||
+      !state.signatures ||
+      !state.aggregateVerifier ||
+      !state.verifierId
+    ) {
+      throw new Error(`missing state ${JSON.stringify(state)}`);
+    }
+    return {
+      tssShare: state.tssShare,
+      signatures: state.signatures,
+      verifierId: state.verifierId,
+      verifierName: state.aggregateVerifier,
+    };
+  });
+  console.log('here 3');
+
+  await privateKeyOrSigningProvider.setupProvider({
+    sign: tssSign as any,
+    getPublic: tssGetPublic as any,
+  });
+  console.log('here 4');
+
   return privateKeyOrSigningProvider._providerEngineProxy;
 }
