@@ -58,6 +58,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     case 'eth_sign':
     case 'personal_sign':
     case 'eth_signTypedData':
+    case 'eth_getBalance':
       return handleProviderRequest(request, origin);
     default:
       throw new Error('Method not found.');
@@ -80,6 +81,7 @@ export const keyring = {
       case 'eth_sign':
       case 'personal_sign':
       case 'eth_signTypedData':
+      case 'eth_getBalance':
         return handleProviderRequest(request, 'http://localhost:3000');
       default:
         throw new Error('Method not found.');
@@ -96,9 +98,7 @@ export const keyring = {
  */
 async function handleProviderRequest(request: any, origin: string) {
   const provider = await initializeProvider(origin);
-  console.log("calling handle", request, origin);
   const result = await provider.request(request);
-  console.log("what is the result", result);
   return {
     result,
   };
@@ -155,10 +155,10 @@ async function initializeProvider(origin: string): Promise<any> {
   const privateKeyOrSigningProvider = new EthereumPrivateKeyProvider({
     config: {
       chainConfig: {
-        displayName: 'Ethereum Mainnet',
-        chainId: '0x1',
-        rpcTarget: `https://mainnet.infura.io/v3/776218ac4734478c90191dde8cae483c`,
-        blockExplorer: 'https://etherscan.io/',
+        displayName: 'Ethereum Goerli',
+        chainId: '0x5',
+        rpcTarget: `https://goerli.infura.io/v3/776218ac4734478c90191dde8cae483c`,
+        blockExplorer: 'https://goerli.etherscan.io/',
         ticker: 'ETH',
         tickerName: 'Ethereum',
       },
