@@ -3360,6 +3360,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@toruslabs/tss-lib@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "@toruslabs/tss-lib@npm:1.0.5"
+  checksum: c5284c2589166b2b91814bf44f83485aa14a105dadd04c2d2a6f1927d5570b5038de50931d301807c765fd8a1b4d74e296861d9db0f510abca9f57a81a867b46
+  languageName: node
+  linkType: hard
+
 "@trysound/sax@npm:0.2.0":
   version: 0.2.0
   resolution: "@trysound/sax@npm:0.2.0"
@@ -15768,6 +15775,7 @@ __metadata:
     "@testing-library/react": ^13.3.0
     "@testing-library/user-event": ^13.5.0
     "@toruslabs/openlogin-mpc": 3.0.1-alpha.0
+    "@toruslabs/tss-lib": ^1.0.5
     "@types/jest": ^27.5.2
     "@types/react": ^18.0.15
     "@types/react-dom": ^18.0.6
@@ -15862,11 +15870,11 @@ __metadata:
     "@metamask/snap-types": ^0.22.0
     "@metamask/snaps-cli": ^0.22.0
     "@metamask/snaps-webpack-plugin": ^0.22.1
+    "@toruslabs/eccrypto": ^1.1.8
     "@toruslabs/http-helpers": ^3.2.0
     "@toruslabs/openlogin-utils": ^2.1.0
     "@toruslabs/torus-scripts": ^1.2.2
-    "@toruslabs/tss-client": ^0.0.2
-    "@toruslabs/tss-lib": ^0.0.2
+    "@toruslabs/tss-lib": ^1.0.5
     "@types/elliptic": ^6.4.14
     "@typescript-eslint/eslint-plugin": ^5.33.0
     "@typescript-eslint/parser": ^5.33.0
@@ -15881,6 +15889,7 @@ __metadata:
     eslint-plugin-jsdoc: ^39.2.9
     eslint-plugin-node: ^11.1.0
     eslint-plugin-prettier: ^4.2.1
+    keccak256: ^1.0.6
     prettier: ^2.2.1
     prettier-plugin-packagejson: ^2.2.11
     rimraf: ^3.0.2

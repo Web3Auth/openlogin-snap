@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import { generatePrivate } from '@toruslabs/eccrypto';
 import { Msg } from '@toruslabs/tss-client/dist/types/types';
-import axios from 'axios';
 import BN from 'bn.js';
 import keccak256 from 'keccak256';
 // import { Socket } from 'socket.io-client';
@@ -53,11 +52,11 @@ if (globalThis.js_read_msg === undefined) {
 
 if (globalThis.js_send_msg === undefined) {
   globalThis.js_send_msg = async function (
-    session,
-    self_index,
-    party,
-    msg_type,
-    msg_data,
+    session: any,
+    self_index: any,
+    party: any,
+    msg_type: any,
+    msg_data: any,
   ) {
     console.log('HERE SEND');
     const tss_client = globalThis.tss_clients[session] as Client;
@@ -84,25 +83,32 @@ if (globalThis.js_send_msg === undefined) {
     //   return true;
     // }
 
-    if (tss_client.websocketOnly) {
-      const socket = tss_client.sockets[party];
-      socket.emit('send_msg', {
+    // if (tss_client.websocketOnly) {
+    //   const socket = tss_client.sockets[party];
+    //   if (!socket) {
+    //     throw new Error('no socket');
+    //   }
+
+    //   socket.send('send_msg', {
+    //     session,
+    //     sender: self_index,
+    //     recipient: party,
+    //     msg_type,
+    //     msg_data,
+    //   });
+    // } else {
+    const endpoint = tss_client.lookupEndpoint(session, party);
+    fetch(`${endpoint}/send`, {
+      method: 'POST',
+      body: JSON.stringify({
         session,
         sender: self_index,
         recipient: party,
         msg_type,
         msg_data,
-      });
-    } else {
-      const endpoint = tss_client.lookupEndpoint(session, party);
-      axios.post(`${endpoint}/send`, {
-        session,
-        sender: self_index,
-        recipient: party,
-        msg_type,
-        msg_data,
-      });
-    }
+      }),
+    });
+    // }
     return true;
   };
 }
@@ -277,13 +283,14 @@ export class Client {
     );
 
     console.log('can get batch size', tss.batch_size());
+
     debugger;
 
-    this._signer = tss.threshold_signer(
+    this._signer = tss.threshold_signer_hack(
       this.session,
-      this.index,
-      this.parties.length,
-      this.parties.length,
+      `n${this.index}`,
+      `n${this.parties.length}`,
+      `n${this.parties.length}`,
       this.share,
       this.pubKey,
     );

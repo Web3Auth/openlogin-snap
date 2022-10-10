@@ -14,7 +14,7 @@ const ec = new EC('secp256k1');
 const tssServerEndpoint = 'http://localhost:4000';
 const tssWsEndpoint = 'ws://localhost:4001';
 
-const tssImportURL = 'https://scripts.toruswallet.io/tss-lib.wasm';
+const tssImportURL = 'https://scripts.toruswallet.io/debug6.wasm';
 
 const clients: { client: any; allocated: boolean }[] = [];
 
@@ -265,7 +265,7 @@ export async function generatePrecompute() {
 
   const client = await setupTSS(tssShare, pubKey, verifierName, verifierId);
   console.log('there 3');
-  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+  const midRes = await fetch('https://scripts.toruswallet.io/debug6.wasm');
   const wasmModule = midRes
     .arrayBuffer()
     .then((buf) => WebAssembly.compile(buf));
@@ -308,7 +308,7 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
   const { signatures } = await getTSSData();
   console.log('here now 3');
 
-  const midRes = await fetch('https://scripts.toruswallet.io/tss-lib.wasm');
+  const midRes = await fetch('https://scripts.toruswallet.io/debug6.wasm');
   const wasmModule = midRes
     .arrayBuffer()
     .then((buf) => WebAssembly.compile(buf));
