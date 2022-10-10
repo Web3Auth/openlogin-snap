@@ -25,7 +25,7 @@
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
     "serve": "mm-snap serve",
     "start": "python3 -m http.server 8080 --directory .",
-    "build:torus": "torus-scripts start --name=bundle.js"
+    "watch:torus": "torus-scripts start"
   },
   "dependencies": {
     "@babel/runtime": "^7.19.0",

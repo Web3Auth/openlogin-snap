@@ -328,7 +328,7 @@ export const Home = () => {
           content={{
             title: 'Login With OpenLogin',
             description: openLoginState.tssShare
-              ? 'Logged In'
+              ? 'Logged In to Goerli'
               : 'Login With MPC version of OpenLogin',
             button: isLoggedIn ? (
               <>✅ Logged in</>
@@ -387,15 +387,17 @@ export const Home = () => {
             disabled={!state.installedSnap}
           />
         )}
-        <Card
-          content={{
-            title: 'Store OpenLogin State',
-            description: 'Syncs OpenLogin State into Snap',
-            button: <SendHelloButton onClick={handleSync} disabled={false} />,
-          }}
-          disabled={false}
-          fullWidth={false}
-        />
+        {state.installedSnap && (
+          <Card
+            content={{
+              title: 'Store OpenLogin State',
+              description: 'Syncs OpenLogin State into Snap',
+              button: <SendHelloButton onClick={handleSync} disabled={false} />,
+            }}
+            disabled={false}
+            fullWidth={false}
+          />
+        )}
         {multiChainProvider && (
           <Web3Operations
             content={{
