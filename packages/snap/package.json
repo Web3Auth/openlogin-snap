@@ -32,7 +32,7 @@
     "@toruslabs/eccrypto": "^1.1.8",
     "@toruslabs/http-helpers": "^3.2.0",
     "@toruslabs/openlogin-utils": "^2.1.0",
-    "@toruslabs/tss-lib": "^1.0.5",
+    "@toruslabs/tss-lib": "1.0.15",
     "@web3auth-mpc/ethereum-provider": "^2.1.22",
     "async-mutex": "^0.4.0",
     "bn.js": "^5.2.1",

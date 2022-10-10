@@ -14,52 +14,52 @@ const ec = new EC('secp256k1');
 const tssServerEndpoint = 'http://localhost:4000';
 const tssWsEndpoint = 'ws://localhost:4001';
 
-const tssImportURL = 'https://scripts.toruswallet.io/debug6.wasm';
+const tssImportURL = 'https://scripts.toruswallet.io/a2.wasm';
 
 const clients: { client: any; allocated: boolean }[] = [];
 
-const createSockets = async (
-  wsEndpoints: (string | null | undefined)[],
-): Promise<(WebSocket | null)[]> => {
-  console.log('socket 1', wsEndpoints);
+// const createSockets = async (
+//   wsEndpoints: (string | null | undefined)[],
+// ): Promise<(WebSocket | null)[]> => {
+//   console.log('socket 1', wsEndpoints);
 
-  const sockets = wsEndpoints.map((wsEndpoint) => {
-    if (wsEndpoint === null || wsEndpoint === undefined) {
-      return null;
-    }
-    // const { origin } = new URL(wsEndpoint);
-    // const path = `${new URL(wsEndpoint).pathname}/socket.io/`;
-    // return io(origin, { transports: ['websocket'] });
-    return new WebSocket(wsEndpoint);
-  });
+//   const sockets = wsEndpoints.map((wsEndpoint) => {
+//     if (wsEndpoint === null || wsEndpoint === undefined) {
+//       return null;
+//     }
+//     // const { origin } = new URL(wsEndpoint);
+//     // const path = `${new URL(wsEndpoint).pathname}/socket.io/`;
+//     // return io(origin, { transports: ['websocket'] });
+//     return new WebSocket(wsEndpoint);
+//   });
 
-  console.log('socket 2');
+//   console.log('socket 2');
 
-  await new Promise((resolve) => {
-    const timer = setInterval(() => {
-      console.log('what are the sockets', sockets);
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
-      for (let i = 0; i < sockets.length; i++) {
-        const socket = sockets[i];
-        if (socket === null) {
-          continue;
-        }
+//   await new Promise((resolve) => {
+//     const timer = setInterval(() => {
+//       console.log('what are the sockets', sockets);
+//       // eslint-disable-next-line @typescript-eslint/prefer-for-of
+//       for (let i = 0; i < sockets.length; i++) {
+//         const socket = sockets[i];
+//         if (socket === null) {
+//           continue;
+//         }
 
-        if (!socket.OPEN) {
-          return;
-        }
-      }
-      clearInterval(timer);
-      resolve(true);
-    }, 500);
-  });
+//         if (!socket.OPEN) {
+//           return;
+//         }
+//       }
+//       clearInterval(timer);
+//       resolve(true);
+//     }, 500);
+//   });
 
-  await new Promise((r) => setTimeout(r, 6000));
+//   await new Promise((r) => setTimeout(r, 6000));
 
-  console.log('socket 3');
+//   console.log('socket 3');
 
-  return sockets;
-};
+//   return sockets;
+// };
 
 /**
  * setupTSS - setup TSS
@@ -91,7 +91,7 @@ export async function setupTSS(
   //   }, 500);
   // });
 
-  const sockets = await createSockets(wsEndpoints);
+  // const sockets = await createSockets(wsEndpoints);
 
   const parsedTSSShare = {
     share: tssShare.split('-')[0].split(':')[1],
@@ -110,12 +110,16 @@ export async function setupTSS(
 
   console.log('ere 4');
 
+  // if (sockets[0] === null) {
+  //   throw new Error("no null socket");
+  // }
+
   return new Client(
     `${verifierName}~${verifierId}:${Date.now()}`,
     localIndex,
     parties,
     endpoints,
-    sockets,
+    ["ws://localhost:4001", null] as any,
     base64Share,
     pubKey,
     true,
@@ -265,12 +269,12 @@ export async function generatePrecompute() {
 
   const client = await setupTSS(tssShare, pubKey, verifierName, verifierId);
   console.log('there 3');
-  const midRes = await fetch('https://scripts.toruswallet.io/debug6.wasm');
+  const midRes = await fetch('https://scripts.toruswallet.io/a2.wasm');
   const wasmModule = midRes
     .arrayBuffer()
     .then((buf) => WebAssembly.compile(buf));
-  const wasm = await tss.default(wasmModule);
-  client.precompute(wasm);
+  await tss.default(wasmModule);
+  client.precompute(tss);
   console.log('there 4');
 
   await client.ready();
@@ -299,6 +303,7 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
         foundClient = client;
       }
     }
+    console.log('looking for client', clients);
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
@@ -308,15 +313,9 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
   const { signatures } = await getTSSData();
   console.log('here now 3');
 
-  const midRes = await fetch('https://scripts.toruswallet.io/debug6.wasm');
-  const wasmModule = midRes
-    .arrayBuffer()
-    .then((buf) => WebAssembly.compile(buf));
-  const wasm = await tss.default(wasmModule);
-
   // eslint-disable-next-line prefer-const
   let { r, s, recoveryParam } = await foundClient.client.sign(
-    wasm,
+    tss,
     Buffer.from(msgHash).toString('base64'),
     true,
     '',

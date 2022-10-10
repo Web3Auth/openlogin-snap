@@ -3353,17 +3353,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@toruslabs/tss-lib@npm:1.0.15":
+  version: 1.0.15
+  resolution: "@toruslabs/tss-lib@npm:1.0.15"
+  checksum: 036baa456f40189644258d0b9ede3fce2c6c01e49cb087de16ac41aca64dee8fef2a9be51cd5d19b3ecd2176edc5a0300420ffa24553bf44e0c8e34800725b86
+  languageName: node
+  linkType: hard
+
 "@toruslabs/tss-lib@npm:^0.0.2":
   version: 0.0.2
   resolution: "@toruslabs/tss-lib@npm:0.0.2"
   checksum: 8ce5d47849a970403613d5adbb0fd54d632243bd4f7c8afa9af543de30301440140942a8355a10f4dab6c82fc0a66a80253f3738bfea7dfd2ba70534642fa88e
-  languageName: node
-  linkType: hard
-
-"@toruslabs/tss-lib@npm:^1.0.5":
-  version: 1.0.5
-  resolution: "@toruslabs/tss-lib@npm:1.0.5"
-  checksum: c5284c2589166b2b91814bf44f83485aa14a105dadd04c2d2a6f1927d5570b5038de50931d301807c765fd8a1b4d74e296861d9db0f510abca9f57a81a867b46
   languageName: node
   linkType: hard
 
@@ -15775,7 +15775,7 @@ __metadata:
     "@testing-library/react": ^13.3.0
     "@testing-library/user-event": ^13.5.0
     "@toruslabs/openlogin-mpc": 3.0.1-alpha.0
-    "@toruslabs/tss-lib": ^1.0.5
+    "@toruslabs/tss-lib": 1.0.15
     "@types/jest": ^27.5.2
     "@types/react": ^18.0.15
     "@types/react-dom": ^18.0.6
@@ -15874,7 +15874,7 @@ __metadata:
     "@toruslabs/http-helpers": ^3.2.0
     "@toruslabs/openlogin-utils": ^2.1.0
     "@toruslabs/torus-scripts": ^1.2.2
-    "@toruslabs/tss-lib": ^1.0.5
+    "@toruslabs/tss-lib": 1.0.15
     "@types/elliptic": ^6.4.14
     "@typescript-eslint/eslint-plugin": ^5.33.0
     "@typescript-eslint/parser": ^5.33.0

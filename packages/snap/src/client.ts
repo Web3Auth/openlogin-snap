@@ -17,7 +17,7 @@ if (globalThis.js_read_msg === undefined) {
     party: number,
     msg_type: string,
   ) {
-    console.log('HERE READ');
+    console.log('reading message', msg_type);
     const tss_client = globalThis.tss_clients[session] as Client;
     tss_client.log(`reading msg, ${msg_type}`);
     if (msg_type === 'ga1_worker_support') {
@@ -30,6 +30,7 @@ if (globalThis.js_read_msg === undefined) {
         m.recipient === self_index &&
         m.msg_type === msg_type,
     );
+    console.log('trying to find message..', mm);
     if (!mm) {
       return new Promise((resolve) => {
         tss_client.pendingReads[
@@ -58,7 +59,7 @@ if (globalThis.js_send_msg === undefined) {
     msg_type: any,
     msg_data: any,
   ) {
-    console.log('HERE SEND');
+    console.log('sending message', msg_type);
     const tss_client = globalThis.tss_clients[session] as Client;
     tss_client.log(`sending msg, ${msg_type}`);
     // if (msg_type.indexOf('ga1_data_unprocessed') > -1) {
@@ -99,6 +100,10 @@ if (globalThis.js_send_msg === undefined) {
     // } else {
     const endpoint = tss_client.lookupEndpoint(session, party);
     fetch(`${endpoint}/send`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
       method: 'POST',
       body: JSON.stringify({
         session,
@@ -217,10 +222,20 @@ export class Client {
       let resolve;
       this._readyPromises.push(new Promise((r) => (resolve = r)));
       this._readyResolves.push(resolve);
-
+      // debugger;
+      socket = new WebSocket(socket as any);
+      const socket2 = new WebSocket('ws://localhost:8888');
+      socket2.onmessage = function(ev) {
+        console.log('this is the event', ev);
+      }
       // Add listener for incoming messages
-      socket.onmessage = (_ev) => {
-        const { ev, data } = JSON.parse(_ev.data);
+      socket.addEventListener('message', (event) => {
+        console.log(event);
+        if (!event.data) {
+          // debugger;
+          console.error('socket event but no data');
+        }
+        const { ev, data } = JSON.parse(event.data);
         if (ev === 'send') {
           const { session, sender, recipient, msg_type, msg_data } = data;
           if (session !== this.session) {
@@ -254,7 +269,7 @@ export class Client {
           }
           this.precomputes[this.parties.indexOf(party)] = 'precompute_complete';
         }
-      };
+      });
     });
 
     this._readyPromiseAll = Promise.all(this._readyPromises).then(() => {
@@ -272,78 +287,79 @@ export class Client {
   precompute(tss: any, additionalParams?: Record<string, unknown>) {
     console.log('precompute 1');
     this._startPrecomputeTime = Date.now();
-    console.log(
-      'precompute 2',
-      this.session,
-      this.index,
-      this.parties.length,
-      this.parties.length,
-      this.share,
-      this.pubKey,
-    );
+    // console.log(
+    //   'precompute 2',
+    //   this.session,
+    //   this.index,
+    //   this.parties.length,
+    //   this.parties.length,
+    //   this.share,
+    //   this.pubKey,
+    // );
 
-    console.log('can get batch size', tss.batch_size());
+    // console.log('can get batch size', tss.batch_size());
 
-    debugger;
+    // this._signer = tss.threshold_signer_hack(
+    //   this.session,
+    //   `n${this.index}`,
+    //   `n${this.parties.length}`,
+    //   `n${this.parties.length}`,
+    //   this.share,
+    //   this.pubKey,
+    // );
+    // console.log('precompute 3');
 
-    this._signer = tss.threshold_signer_hack(
-      this.session,
-      `n${this.index}`,
-      `n${this.parties.length}`,
-      `n${this.parties.length}`,
-      this.share,
-      this.pubKey,
-    );
-    console.log('precompute 3');
+    // this._rng = tss.random_generator(
+    //   Buffer.from(generatePrivate()).toString('base64'),
+    // );
 
-    this._rng = tss.random_generator(
-      Buffer.from(generatePrivate()).toString('base64'),
-    );
-
-    console.log('precompute 4');
+    // console.log('precompute 4');
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < this.parties.length; i++) {
       const party = this.parties[i];
       if (party !== this.index) {
-        axios.post(`${this.lookupEndpoint(this.session, party)}/precompute`, {
-          endpoints: this.endpoints.map((endpoint, j) => {
-            if (j !== this.index) {
-              return endpoint;
-            }
-            // pass in different id for websocket connection for each server so that the server can communicate back
-            return `websocket:0`;
+        fetch(`${this.lookupEndpoint(this.session, party)}/precompute`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'post',
+          body: JSON.stringify({
+            endpoints: this.endpoints.map((endpoint, j) => {
+              if (j !== this.index) {
+                return endpoint;
+              }
+              // pass in different id for websocket connection for each server so that the server can communicate back
+              return `websocket:0`;
+            }),
+            session: this.session,
+            parties: this.parties,
+            player_index: party,
+            threshold: this.parties.length,
+            pubkey: this.pubKey,
+            notifyWebsocketId: 0,
+            sendWebsocket: 0,
+            ...additionalParams,
           }),
-          session: this.session,
-          parties: this.parties,
-          player_index: party,
-          threshold: this.parties.length,
-          pubkey: this.pubKey,
-          notifyWebsocketId: 0,
-          sendWebsocket: 0,
-          ...additionalParams,
         });
       }
     }
 
     console.log('precompute 5');
-
     tss
-      .setup(this._signer, this._rng)
-      .then(() => {
-        console.log('precompute 6');
-
-        if (!this._signer || !this._rng) {
-          throw new Error('no signer or rng');
-        }
-        return tss.precompute(
-          new Uint8Array(this.parties),
-          this._signer,
-          this._rng,
-        );
-      })
+      .everything(
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        this.session,
+        `n${this.index}`,
+        `n${this.parties.length}`,
+        `n${this.parties.length}`,
+        this.share,
+        this.pubKey,
+        new Uint8Array(this.parties),
+      )
       .then((precompute: any) => {
-        console.log('precompute 7');
+        console.log('precompute 6');
 
         this.precomputes[this.parties.indexOf(this.index)] = precompute;
         this._readyResolves[this.parties.indexOf(this.index)]();
@@ -394,8 +410,13 @@ export class Client {
       if (precompute === 'precompute_complete') {
         const endpoint = this.lookupEndpoint(this.session, party);
         sigFragmentsPromises.push(
-          axios
-            .post(`${endpoint}/sign`, {
+          fetch(`${endpoint}/sign`, {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify({
               session: this.session,
               sender: this.index,
               recipient: party,
@@ -404,7 +425,9 @@ export class Client {
               original_message,
               hash_algo,
               ...additionalParams,
-            })
+            }),
+          })
+            .then((res) => res.json())
             .then((res) => res.data.sig),
         );
       } else {
@@ -452,10 +475,17 @@ export class Client {
     await Promise.all(
       this.parties.map((party) => {
         if (party !== this.index) {
-          return axios.post(
-            `${this.lookupEndpoint(this.session, party)}/cleanup`,
-            { session: this.session, ...additionalParams },
-          );
+          return fetch(`${this.lookupEndpoint(this.session, party)}/cleanup`, {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify({
+              session: this.session,
+              ...additionalParams,
+            }),
+          });
         }
         return Promise.resolve(true);
       }),

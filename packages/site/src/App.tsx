@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
+import * as tss from '@toruslabs/tss-lib';
 import { Footer, Header, Home } from './components';
 import { MetaMaskProvider } from './hooks';
 
@@ -13,6 +14,8 @@ const Wrapper = styled.div`
   min-height: 100vh;
   max-width: 100vw;
 `;
+
+(window as any).tss = tss;
 
 function App() {
   const [darkTheme, setDarkTheme] = useState(getThemePreference());
