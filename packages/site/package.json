@@ -11,7 +11,7 @@
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
-    "start": "react-app-rewired start",
+    "start": "PORT=3001 react-app-rewired start",
     "test": "react-app-rewired test"
   },
   "browserslist": {

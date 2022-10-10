@@ -108,8 +108,10 @@ const ErrorMessage = styled.div`
 
 const openLoginInstance = new OpenLogin({
   clientId: 'your_lci',
-  network: 'mpc-testnet',
-  _iframeUrl: 'https://mpc-beta.openlogin.com',
+  network: 'testnet',
+  uxMode: 'popup',
+  // _iframeUrl: 'https://mpc-beta.openlogin.com',
+  _iframeUrl: 'http://localhost:3000',
 });
 
 export const Home = () => {
@@ -123,7 +125,7 @@ export const Home = () => {
 
   const setOpenLoginInfo = useCallback(async () => {
     const userInfo = await openLoginInstance.getUserInfo();
-    const { privKey } = openLoginInstance;
+    const { privKey } = openLoginInstance.state;
     console.log(userInfo, privKey);
     const { tssShare, signatures } = openLoginInstance.state;
     setOpenLoginState({
@@ -166,6 +168,7 @@ export const Home = () => {
   const handleOpenLoginClick = async () => {
     await openLoginInstance.login({
       mfaLevel: 'mandatory',
+      loginProvider: 'metamask',
     });
 
     setIsLoggedIn(true);
@@ -327,11 +330,15 @@ export const Home = () => {
             description: openLoginState.tssShare
               ? 'Logged In to Goerli'
               : 'Login With MPC version of OpenLogin',
-            button: !openLoginState.tssShare && (
-              <LoginWithOpenLoginButton
-                onClick={handleOpenLoginClick}
-                disabled={!isInitialized || isLoggedIn}
-              />
+            button: isLoggedIn ? (
+              <>✅ Logged in</>
+            ) : (
+              !openLoginState.tssShare && (
+                <LoginWithOpenLoginButton
+                  onClick={handleOpenLoginClick}
+                  disabled={!isInitialized || isLoggedIn}
+                />
+              )
             ),
           }}
           fullWidth
