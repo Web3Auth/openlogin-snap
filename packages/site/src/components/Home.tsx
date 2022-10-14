@@ -108,8 +108,9 @@ const ErrorMessage = styled.div`
 
 const openLoginInstance = new OpenLogin({
   clientId: 'your_lci',
-  network: 'mpc-testnet',
-  _iframeUrl: 'https://mpc-beta.openlogin.com',
+  network: 'development',
+  uxMode: 'popup',
+  // _iframeUrl: 'https:///mpc-beta.openlogin.com',
 });
 
 export const Home = () => {
@@ -166,6 +167,7 @@ export const Home = () => {
   const handleOpenLoginClick = async () => {
     await openLoginInstance.login({
       mfaLevel: 'mandatory',
+      loginProvider: 'metamask',
     });
 
     setIsLoggedIn(true);

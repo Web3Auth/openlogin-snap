@@ -97,7 +97,7 @@ export async function setupTSS(
     share: tssShare.split('-')[0].split(':')[1],
     index: tssShare.split('-')[1].split(':')[1],
   };
-  console.log('ere 3');
+  // console.log('ere 3');
 
   const base64Share = Buffer.from(
     parsedTSSShare.share.padStart(64, '0'),
@@ -108,7 +108,7 @@ export async function setupTSS(
   //   const remoteIndex = 0;
   const parties = [0, 1];
 
-  console.log('ere 4');
+  // console.log('ere 4');
 
   // if (sockets[0] === null) {
   //   throw new Error("no null socket");
@@ -119,7 +119,7 @@ export async function setupTSS(
     localIndex,
     parties,
     endpoints,
-    ["ws://localhost:4001", null] as any,
+    [new WebSocket('ws://localhost:4001'), null] as any,
     base64Share,
     pubKey,
     true,
@@ -261,21 +261,21 @@ export async function generatePrecompute() {
     throw new Error('not logged in, verifier or verifierId undefined');
   }
 
-  console.log('there 1');
+  // console.log('there 1');
 
   const { tssShare } = await getTSSData();
   const pubKey = (await tssGetPublic()).toString('base64');
-  console.log('there 2');
+  // console.log('there 2');
 
   const client = await setupTSS(tssShare, pubKey, verifierName, verifierId);
-  console.log('there 3');
+  // console.log('there 3');
   const midRes = await fetch('https://scripts.toruswallet.io/a2.wasm');
   const wasmModule = midRes
     .arrayBuffer()
     .then((buf) => WebAssembly.compile(buf));
   await tss.default(wasmModule);
   client.precompute(tss);
-  console.log('there 4');
+  // console.log('there 4');
 
   await client.ready();
   clients.push({ client, allocated: false });
@@ -288,9 +288,9 @@ export async function generatePrecompute() {
  */
 export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
   // eslint-disable-next-line no-console
-  console.log('what is rawMsg', rawMsg);
+  // console.log('what is rawMsg', rawMsg);
+  console.log('precomputing...');
   generatePrecompute();
-  console.log('precomputing..?');
   // const finalHash = `0x${msgHash.toString("hex")}`;
   let foundClient = null as any;
 
@@ -303,15 +303,15 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
         foundClient = client;
       }
     }
-    console.log('looking for client', clients);
+    // console.log('looking for client', clients);
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  console.log('here now 1');
+  // console.log('FOUND CLIENT here now 1');
   await foundClient.client.ready();
-  console.log('here now 2');
+  console.log('precompute complete');
   const { signatures } = await getTSSData();
-  console.log('here now 3');
+  // console.log('here now 3');
 
   // eslint-disable-next-line prefer-const
   let { r, s, recoveryParam } = await foundClient.client.sign(
@@ -324,13 +324,13 @@ export async function tssSign(msgHash: Buffer, rawMsg?: Buffer) {
       signatures,
     },
   );
-  console.log('here now 4');
+  // console.log('here now 4');
+  const halfOfN = ec.curve.n.div(new BN(2));
+  const halfOfNPlusOne = halfOfN.add(new BN(1));
+  const sBN = new BN(s.toString('hex'), 'hex');
 
-  if (
-    new BN(s.toString('hex'), 'hex').gte(
-      ec.curve.n.div(new BN(2).add(new BN(1))),
-    )
-  ) {
+  if (sBN.gte(halfOfNPlusOne)) {
+    console.log('flipped');
     s = s.neg().umod(ec.curve.n);
     // eslint-disable-next-line no-bitwise
     recoveryParam ^= 1;

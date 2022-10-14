@@ -72,7 +72,7 @@ export const keyring = {
   getAccounts: async () => {
     const res = await handleProviderRequest(
       { method: 'eth_accounts', params: [] },
-      'http://localhost:3000',
+      'http://localhost:3001',
     );
     return res.result.map((addr: string) => `eip155:5:${addr}`);
   },
@@ -85,7 +85,7 @@ export const keyring = {
       case 'personal_sign':
       case 'eth_signTypedData':
       case 'eth_getBalance':
-        return handleProviderRequest(request, 'http://localhost:3000');
+        return handleProviderRequest(request, 'http://localhost:3001');
       default:
         throw new Error('Method not found.');
     }
@@ -100,9 +100,9 @@ export const keyring = {
  * @returns provider jrpc response
  */
 async function handleProviderRequest(request: any, origin: string) {
-  console.log('handle provider request', request);
+  // console.log('handle provider request', request);
   const provider = await initializeProvider(origin);
-  console.log('5');
+  // console.log('5');
   const result = await provider.request(request);
   return {
     result,
@@ -157,7 +157,7 @@ async function initializeProvider(origin: string): Promise<any> {
   if (!state) {
     throw new Error('No state for this');
   }
-  console.log('here 1');
+  // console.log('here 1');
   const privateKeyOrSigningProvider = new EthereumSigningProvider({
     config: {
       chainConfig: {
@@ -170,7 +170,7 @@ async function initializeProvider(origin: string): Promise<any> {
       },
     },
   });
-  console.log('here 2');
+  // console.log('here 2');
 
   // const tssDataReader = async () => {
   //   return {
@@ -203,13 +203,13 @@ async function initializeProvider(origin: string): Promise<any> {
       verifierName: state.aggregateVerifier,
     };
   });
-  console.log('here 3');
+  // console.log('here 3');
 
   await privateKeyOrSigningProvider.setupProvider({
     sign: tssSign as any,
     getPublic: tssGetPublic as any,
   });
-  console.log('here 4');
+  // console.log('here 4');
 
   return privateKeyOrSigningProvider._providerEngineProxy;
 }

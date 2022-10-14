@@ -17,27 +17,31 @@ if (globalThis.js_read_msg === undefined) {
     party: number,
     msg_type: string,
   ) {
-    console.log('reading message', msg_type);
+    // console.log('reading message', msg_type);
     const tss_client = globalThis.tss_clients[session] as Client;
     tss_client.log(`reading msg, ${msg_type}`);
     if (msg_type === 'ga1_worker_support') {
       // runs ga1_array processing on a web worker instead of blocking the main thread
       return 'not supported';
     }
-    const mm = tss_client.msgQueue.find(
-      (m) =>
-        m.sender === party &&
-        m.recipient === self_index &&
-        m.msg_type === msg_type,
-    );
-    console.log('trying to find message..', mm);
-    if (!mm) {
-      return new Promise((resolve) => {
-        tss_client.pendingReads[
-          `session-${session}:sender-${party}:recipient-${self_index}:msg_type-${msg_type}`
-        ] = resolve;
-      });
+    let mm;
+    while (!mm) {
+      mm = tss_client.msgQueue.find(
+        (m) =>
+          m.sender === party &&
+          m.recipient === self_index &&
+          m.msg_type === msg_type,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    // console.log('found message..', mm);
+    // if (!mm) {
+    //   return new Promise((resolve) => {
+    //     tss_client.pendingReads[
+    //       `session-${session}:sender-${party}:recipient-${self_index}:msg_type-${msg_type}`
+    //     ] = resolve;
+    //   });
+    // }
     return mm.msg_data;
   };
 }
@@ -59,7 +63,7 @@ if (globalThis.js_send_msg === undefined) {
     msg_type: any,
     msg_data: any,
   ) {
-    console.log('sending message', msg_type);
+    // console.log('sending message', msg_type);
     const tss_client = globalThis.tss_clients[session] as Client;
     tss_client.log(`sending msg, ${msg_type}`);
     // if (msg_type.indexOf('ga1_data_unprocessed') > -1) {
@@ -202,7 +206,7 @@ export class Client {
     this.pubKey = _pubKey;
     this.websocketOnly = _websocketOnly;
     this.tssImportUrl = _tssImportUrl;
-    this.log = console.log;
+    // this.log = console.log;
     this._ready = false;
     this._consumed = false;
 
@@ -211,7 +215,7 @@ export class Client {
         let clientResolve;
         this._readyPromises.push(new Promise((r) => (clientResolve = r)));
         this._readyResolves.push(clientResolve);
-        return;
+        return null;
       }
 
       //   if (socket.hasListeners('send')) {
@@ -219,23 +223,70 @@ export class Client {
       //   }
 
       // create pending promises for each server that resolves when precompute for that server is complete
-      let resolve;
+      let resolve = null as any;
       this._readyPromises.push(new Promise((r) => (resolve = r)));
       this._readyResolves.push(resolve);
       // debugger;
-      socket = new WebSocket(socket as any);
-      const socket2 = new WebSocket('ws://localhost:8888');
-      socket2.onmessage = function(ev) {
-        console.log('this is the event', ev);
-      }
-      // Add listener for incoming messages
-      socket.addEventListener('message', (event) => {
-        console.log(event);
-        if (!event.data) {
-          // debugger;
-          console.error('socket event but no data');
+
+      setInterval(async () => {
+        const res = await fetch('http://localhost:4000/message').then((a) =>
+          a.json(),
+        );
+        if (!res.message) {
+          return;
         }
-        const { ev, data } = JSON.parse(event.data);
+        const { ev, data } = res.message;
+        if (ev === 'send') {
+          const { session, sender, recipient, msg_type, msg_data } = data;
+          if (session !== this.session) {
+            this.log(
+              `ignoring message for a different session... client session: ${this.session}, message session: ${session}`,
+            );
+          }
+          const pendingRead =
+            this.pendingReads[
+              `session-${session}:sender-${sender}:recipient-${recipient}:msg_type-${msg_type}`
+            ];
+          if (pendingRead) {
+            // globalThis.total_incoming += msg_data.length;
+            // globalThis.total_incoming_msg.push(msg_data);
+            pendingRead(msg_data);
+          } else {
+            this.msgQueue.push({
+              session,
+              sender,
+              recipient,
+              msg_type,
+              msg_data,
+            });
+          }
+        } else if (ev === 'precompute_complete') {
+          // console.log('GETTING PRECOMPUTE COMPLETE');
+          const { session, party } = data;
+          if (session !== this.session) {
+            this.log(
+              `ignoring message for a different session... client session: ${this.session}, message session: ${session}`,
+            );
+          }
+          this.precomputes[this.parties.indexOf(party)] = 'precompute_complete';
+          resolve();
+        }
+      }, 200);
+
+      // Add listener for incoming messages
+      socket.addEventListener('message', async (event) => {
+        // console.log(event);
+        let ev, data;
+        if (event.data) {
+          ev = JSON.parse(event.data).ev;
+          data = JSON.parse(event.data).data;
+          // console.log('socket event HAS data!!');
+        } else {
+          console.error('socket event but no data');
+          return;
+          // debugger;
+        }
+
         if (ev === 'send') {
           const { session, sender, recipient, msg_type, msg_data } = data;
           if (session !== this.session) {
@@ -268,8 +319,10 @@ export class Client {
             );
           }
           this.precomputes[this.parties.indexOf(party)] = 'precompute_complete';
+          resolve();
         }
       });
+      return socket;
     });
 
     this._readyPromiseAll = Promise.all(this._readyPromises).then(() => {
@@ -285,7 +338,7 @@ export class Client {
   }
 
   precompute(tss: any, additionalParams?: Record<string, unknown>) {
-    console.log('precompute 1');
+    // console.log('precompute 1');
     this._startPrecomputeTime = Date.now();
     // console.log(
     //   'precompute 2',
@@ -346,7 +399,7 @@ export class Client {
       }
     }
 
-    console.log('precompute 5');
+    // console.log('precompute 5');
     tss
       .everything(
         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
@@ -359,7 +412,7 @@ export class Client {
         new Uint8Array(this.parties),
       )
       .then((precompute: any) => {
-        console.log('precompute 6');
+        // console.log('precompute 6');
 
         this.precomputes[this.parties.indexOf(this.index)] = precompute;
         this._readyResolves[this.parties.indexOf(this.index)]();
@@ -378,7 +431,7 @@ export class Client {
     if (!this._ready) {
       throw new Error('client is not ready');
     }
-
+    // console.log('sign 1');
     if (this._consumed) {
       throw new Error(
         'this instance has already signed a message and cannot be reused',
@@ -386,10 +439,12 @@ export class Client {
     } else {
       this._consumed = true;
     }
+    // console.log('sign 2');
 
     if (this.precomputes.length !== this.parties.length) {
       throw new Error('insufficient precomputes');
     }
+    // console.log('sign 3');
 
     // check message hashing
     if (!hash_only) {
@@ -401,13 +456,18 @@ export class Client {
         throw new Error(`hash algo ${hash_algo} not supported`);
       }
     }
+    // console.log('sign 4');
 
     this._startSignTime = Date.now();
     const sigFragmentsPromises = [];
+    // console.log('sign 5');
+
     for (let i = 0; i < this.precomputes.length; i++) {
       const precompute = this.precomputes[i];
       const party = i;
       if (precompute === 'precompute_complete') {
+        // console.log('sign 6');
+
         const endpoint = this.lookupEndpoint(this.session, party);
         sigFragmentsPromises.push(
           fetch(`${endpoint}/sign`, {
@@ -428,14 +488,21 @@ export class Client {
             }),
           })
             .then((res) => res.json())
-            .then((res) => res.data.sig),
+            .then((res) => {
+              // console.log('sign 7', res);
+
+              return res.sig;
+            }),
         );
       } else {
+        // console.log('sign 8');
+
         sigFragmentsPromises.push(
           Promise.resolve(tss.local_sign(msg, hash_only, precompute)),
         );
       }
     }
+    // console.log('sign 9');
 
     const sigFragments = await Promise.all(sigFragmentsPromises);
 
@@ -448,6 +515,8 @@ export class Client {
     const s = new BN(sigHex.slice(64), 16);
     const recoveryParam = Buffer.from(R, 'base64')[63] % 2;
     this._endSignTime = Date.now();
+    // console.log('sign 10');
+
     return { r, s, recoveryParam };
   }
 
