@@ -8217,9 +8217,9 @@ __metadata:
   linkType: hard
 
 "decode-uri-component@npm:^0.2.0":
-  version: 0.2.0
-  resolution: "decode-uri-component@npm:0.2.0"
-  checksum: f3749344ab9305ffcfe4bfe300e2dbb61fc6359e2b736812100a3b1b6db0a5668cba31a05e4b45d4d63dbf1a18dfa354cd3ca5bb3ededddabb8cd293f4404f94
+  version: 0.2.2
+  resolution: "decode-uri-component@npm:0.2.2"
+  checksum: 95476a7d28f267292ce745eac3524a9079058bbb35767b76e3ee87d42e34cd0275d2eb19d9d08c3e167f97556e8a2872747f5e65cbebcac8b0c98d83e285f139
   languageName: node
   linkType: hard
 
@@ -8493,13 +8493,6 @@ __metadata:
   dependencies:
     path-type: ^4.0.0
   checksum: fa05e18324510d7283f55862f3161c6759a3f2f8dbce491a2fc14c8324c498286c54282c1f0e933cb930da8419b30679389499b919122952a4f8592362ef4615
-  languageName: node
-  linkType: hard
-
-"dkls@file:./pkg::locator=snap%40workspace%3Apackages%2Fsnap":
-  version: 0.1.0
-  resolution: "dkls@file:./pkg#./pkg::hash=d361ae&locator=snap%40workspace%3Apackages%2Fsnap"
-  checksum: b4e2fe50b7c6f6df505f0da08b42d724a9d65dc55db361d246a16aaff3f104f6131188772fa7c42ba25908591dd80ac499f71f19f3cd792c354e027d142de887
   languageName: node
   linkType: hard
 
@@ -17406,7 +17399,6 @@ __metadata:
     "@typescript-eslint/parser": ^5.33.0
     "@web3auth-mpc/ethereum-provider": ^2.1.22
     async-mutex: ^0.4.0
-    dkls: "file:./pkg"
     eslint: ^8.21.0
     eslint-config-prettier: ^8.1.0
     eslint-plugin-import: ^2.26.0
